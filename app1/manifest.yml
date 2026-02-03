@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1
+  labels:
+    app: app1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app1
+  template:
+    metadata:
+      labels:
+        app: app1
+    spec:
+      containers:
+        - name: app1
+          image: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1
+spec:
+  selector:
+    app: app1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app1
+  annotations:
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing # it means it use for public
+    alb.ingress.kubernetes.io/tags: ENV=dev, Test=Test
+    alb.ingress.kubernetes.io/target-type: ip # what type of service we are using this will map to pods
+    alb.ingress.kubernetes.io/group.name: test123 # same need to add for app2 then two ingress will be in same load balancer
+spec:
+  ingressClassName: alb
+  rules:
+    - host: "app1.daws86s.fun"
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: app1 # need to specify service details
+                port:
+                  number: 80
+
